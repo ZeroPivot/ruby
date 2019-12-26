@@ -1,6 +1,6 @@
 = Pattern matching
 
-Pattern matching is a feature allowing deep matching of structured values, with checking the structure and binding matched parts to local variables.
+Pattern matching is an experimental feature allowing deep matching of structured values, with checking the structure and binding matched parts to local variables.
 
 Pattern matching in Ruby is implemented with +in+ operator, which can be used in a separate expression:
 
@@ -19,9 +19,43 @@ or in +case+ statement:
       ...
     end
 
-(Note that +in+ and +when+ branches can't be mixed in one +case+ statement.)
+(Note that +in+ and +when+ branches can *not* be mixed in one +case+ statement.)
 
 Pattern matching is _exhaustive_: if variable doesn't match pattern (in a separate +in+ statement), or doesn't matches any branch of +case+ statement (and +else+ branch is absent), +NoMatchingPatternError+ is raised.
+
+Therefore, standalone +in+ statement is most useful when expected data structure is known beforehand, to unpack parts of it:
+
+   def connect_to_db(config) # imagine config is a huge configuration hash from YAML
+     config in {connections: {db: {user:, password:}}, logging: {level: log_level}}
+     p [user, passsword, log_level] # local variables now contain relevant parts of the config
+     # ...
+   end
+
+whilst +case+ form can be used for matching and unpacking simultaneously:
+
+  case config
+  in String
+    JSON.parse(config)                    # ...and then probably try to match it again
+
+  in version: '1', db:
+    # hash with {version: '1'} is expected to have db: key
+    puts "database configuration: #{db}"
+
+  in version: '2', connections: {database:}
+    # hash with {version: '2'} is expected to have nested connection: database: structure
+    puts "database configuration: #{database}"
+
+  in String => user, String => password
+    # sometimes connection is passed as just a pair of (user, password)
+    puts "database configuration: #{user}:#{password}"
+
+  in Hash | Array
+    raise "Malformed config structure: #{config}"
+  else
+    raise "Unrecognized config type: #{config.class}"
+  end
+
+See below for more examples and explanations of the syntax.
 
 == Patterns
 
@@ -65,7 +99,7 @@ Both array and hash patterns support "rest" specification:
   else
     "not matched"
   end
-  # => "matched"
+  #=> "matched"
 
   case {a: 1, b: 2, c: 3}
   in {a: Integer, **}
@@ -73,7 +107,7 @@ Both array and hash patterns support "rest" specification:
   else
     "not matched"
   end
-  # => "matched"
+  #=> "matched"
 
 In +case+ (but not in standalone +in+ statement), parentheses around both kinds of patterns could be omitted:
 
@@ -83,7 +117,7 @@ In +case+ (but not in standalone +in+ statement), parentheses around both kinds 
   else
     "not matched"
   end
-  # => "matched"
+  #=> "matched"
 
   case {a: 1, b: 2, c: 3}
   in a: Integer
@@ -91,7 +125,7 @@ In +case+ (but not in standalone +in+ statement), parentheses around both kinds 
   else
     "not matched"
   end
-  # => "matched"
+  #=> "matched"
 
 == Variable binding
 
@@ -103,7 +137,7 @@ Besides deep structural checks, one of very important features of the pattern ma
   else
     "not matched"
   end
-  # => "matched: 1"
+  #=> "matched: 1"
 
   case {a: 1, b: 2, c: 3}
   in a: Integer => m
@@ -111,7 +145,7 @@ Besides deep structural checks, one of very important features of the pattern ma
   else
     "not matched"
   end
-  # => "matched: 1"
+  #=> "matched: 1"
 
 If there is no additional check required, just binding some part of the data to a variable, simpler form may be used:
 
@@ -121,7 +155,7 @@ If there is no additional check required, just binding some part of the data to 
   else
     "not matched"
   end
-  # => "matched: 1"
+  #=> "matched: 1"
 
   case {a: 1, b: 2, c: 3}
   in a: m
@@ -129,7 +163,7 @@ If there is no additional check required, just binding some part of the data to 
   else
     "not matched"
   end
-  # => "matched: 1"
+  #=> "matched: 1"
 
 For hash patterns, even simpler form exists: just key specification (without any value) binds the local variable with the key's name, too:
 
@@ -139,7 +173,7 @@ For hash patterns, even simpler form exists: just key specification (without any
   else
     "not matched"
   end
-  # => "matched: 1"
+  #=> "matched: 1"
 
 Binding works for nested patterns:
 
@@ -159,7 +193,7 @@ The "rest" part of pattern also can be bound to a variable:
   else
     "not matched"
   end
-  # => "matched: 1, [2, 3]"
+  #=> "matched: 1, [2, 3]"
 
   case {a: 1, b: 2, c: 3}
   in a:, **rest
@@ -167,7 +201,7 @@ The "rest" part of pattern also can be bound to a variable:
   else
     "not matched"
   end
-  # => "matched: 1, {:b=>2, :c=>3}"
+  #=> "matched: 1, {:b=>2, :c=>3}"
 
 Binding to variables currently does NOT work for alternative patterns joined with <code>|</code>:
 
@@ -203,7 +237,7 @@ For this case, "variable pinning" operator <code>^</code> can be used, to tell R
   else
     "not matched. expectation was: #{expectation}"
   end
-  # => "not matched. expectation was: 18"
+  #=> "not matched. expectation was: 18"
 
 One important usage of variable pinning is specifying the same value should happen in the pattern several times:
 
@@ -262,7 +296,7 @@ As already mentioned above, hash and array patterns besides literal arrays and h
     "not matched"
   end
   # prints: deconstruct_keys called with [:x]
-  # => "matched: 1"
+  #=> "matched: 1"
 
 +keys+ are passed to +deconstruct_keys+ to provide room for optimization in matched class: if calculating full hash representation is expensive, it may calculate only the necessary subhash.
 
@@ -319,7 +353,7 @@ Additionally, when matching custom classes, expected class could be specified as
 
 == Current feature status
 
-As of Ruby 2.7, feature is considered _experimental_: its syntax can (slightly) change in the future, and the performance is not optimized yet. Every time you use pattern matching in code, the warning will be printed:
+As of Ruby 2.7, feature is considered _experimental_: its syntax can change in the future, and the performance is not optimized yet. Every time you use pattern matching in code, the warning will be printed:
 
   {a: 1, b: 2} in {a:}
   # warning: Pattern matching is experimental, and the behavior may change in future versions of Ruby!
@@ -332,7 +366,7 @@ To suppress this warning, one may use newly introduced Warning::[]= method:
 
 Alternatively, command-line key <code>-W:no-experimental</code> can be used to turn off "experimental" feature warnings.
 
-One of the things developer should be aware about, which probably be fixed in upcoming version, is that pattern matching statement rewrites mentioned local variables on partial match, <i>even if the whole pattern is not matched</i>.
+One of the things developer should be aware about, which probably to be fixed in upcoming versions, is that pattern matching statement rewrites mentioned local variables on partial match, <i>even if the whole pattern is not matched</i>.
 
   a = 5
   case [1, 2]

@@ -1,12 +1,12 @@
 = Pattern matching
 
-Pattern matching is an experimental feature allowing deep matching of structured values, with checking the structure and binding matched parts to local variables.
+Pattern matching is an experimental feature allowing deep matching of structured values: checking the structure, and binding the matched parts to local variables.
 
-Pattern matching in Ruby is implemented with +in+ operator, which can be used in a separate expression:
+Pattern matching in Ruby is implemented with the +in+ operator, which can be used in a standalone expression:
 
     <variable> in <pattern>
 
-or in +case+ statement:
+or within the +case+ statement:
 
     case <variable>
     in <pattern1>
@@ -109,7 +109,7 @@ Both array and hash patterns support "rest" specification:
   end
   #=> "matched"
 
-In +case+ (but not in standalone +in+ statement), parentheses around both kinds of patterns could be omitted:
+In +case+ (but not in standalone +in+) statement, parentheses around both kinds of patterns could be omitted
 
   case [1, 2]
   in Integer, Integer
@@ -129,7 +129,7 @@ In +case+ (but not in standalone +in+ statement), parentheses around both kinds 
 
 == Variable binding
 
-Besides deep structural checks, one of very important features of the pattern matching is binding matched parts to a local variables. The basic form of binding is just specifying <code>=> variable_name</code> after the matched (sub)pattern (one might find this similar to storing exceptions in local variables in <code>rescue ExceptionClass => var</code> clause):
+Besides deep structural checks, one of the very important features of the pattern matching is the binding of the matched parts to local variables. The basic form of binding is just specifying <code>=> variable_name</code> after the matched (sub)pattern (one might find this similar to storing exceptions in local variables in <code>rescue ExceptionClass => var</code> clause):
 
   case [1, 2]
   in Integer => a, Integer
@@ -147,7 +147,7 @@ Besides deep structural checks, one of very important features of the pattern ma
   end
   #=> "matched: 1"
 
-If there is no additional check required, just binding some part of the data to a variable, simpler form may be used:
+If no additional check is required, only binding some part of the data to a variable, a simpler form could be used:
 
   case [1, 2]
   in a, Integer
@@ -165,7 +165,7 @@ If there is no additional check required, just binding some part of the data to 
   end
   #=> "matched: 1"
 
-For hash patterns, even simpler form exists: just key specification (without any value) binds the local variable with the key's name, too:
+For hash patterns, even a simpler form exists: key-only specification (without any value) binds the local variable with the key's name, too:
 
   case {a: 1, b: 2, c: 3}
   in a:
@@ -175,7 +175,7 @@ For hash patterns, even simpler form exists: just key specification (without any
   end
   #=> "matched: 1"
 
-Binding works for nested patterns:
+Binding works for nested patterns as well:
 
   case {name: 'John', friends: [{name: 'Jane'}, {name: 'Rajesh'}]}
   in name:, friends: [{name: first_friend}, *]
@@ -185,7 +185,7 @@ Binding works for nested patterns:
   end
   #=> "matched: Jane"
 
-The "rest" part of pattern also can be bound to a variable:
+The "rest" part of a pattern also can be bound to a variable:
 
   case [1, 2, 3]
   in a, *rest
@@ -252,7 +252,7 @@ One important usage of variable pinning is specifying the same value should happ
   end
   #=> "matched. school: 2"
 
-  case john # he specified his school level is "high", but last school does not match
+  case john # the specified school level is "high", but last school does not match
   in school:, schools: [*, {id:, level: ^school}]
     "matched. school: #{id}"
   else
@@ -262,7 +262,7 @@ One important usage of variable pinning is specifying the same value should happ
 
 == Matching non-primitive objects: +deconstruct_keys+ and +deconstruct+
 
-As already mentioned above, hash and array patterns besides literal arrays and hashes will try to match any object, if it is implementing +deconstruct+ (for array pattern) or +deconstruct_keys+ (for hash pattern).
+As already mentioned above, hash and array patterns besides literal arrays and hashes will try to match any object implementing +deconstruct+ (for array patterns) or +deconstruct_keys+ (for hash patterns).
 
   class Point
     def initialize(x, y)
@@ -298,9 +298,9 @@ As already mentioned above, hash and array patterns besides literal arrays and h
   # prints: deconstruct_keys called with [:x]
   #=> "matched: 1"
 
-+keys+ are passed to +deconstruct_keys+ to provide room for optimization in matched class: if calculating full hash representation is expensive, it may calculate only the necessary subhash.
++keys+ are passed to +deconstruct_keys+ to provide a room for optimization in the matched class: if calculating a full hash representation is expensive, one may calculate only the necessary subhash.
 
-Additionally, when matching custom classes, expected class could be specified as part of the pattern and is checked with <code>===</code>
+Additionally, when matching custom classes, expected class could be specified as a part of the pattern and is checked with <code>===</code>
 
   class SuperPoint < Point
   end
@@ -323,7 +323,7 @@ Additionally, when matching custom classes, expected class could be specified as
 
 == Guard clauses
 
-+if+ can be used to attach additional condition (guard clause) when matched pattern
++if+ can be used to attach an additional condition (guard clause) when the pattern matches
 
   case [1, 2]
   in a, b if b == a*2
@@ -366,7 +366,7 @@ To suppress this warning, one may use newly introduced Warning::[]= method:
 
 Alternatively, command-line key <code>-W:no-experimental</code> can be used to turn off "experimental" feature warnings.
 
-One of the things developer should be aware about, which probably to be fixed in upcoming versions, is that pattern matching statement rewrites mentioned local variables on partial match, <i>even if the whole pattern is not matched</i>.
+One of the things developer should be aware of, which probably to be fixed in the upcoming versions, is that pattern matching statement rewrites mentioned local variables on partial match, <i>even if the whole pattern is not matched</i>.
 
   a = 5
   case [1, 2]
@@ -389,7 +389,7 @@ One of the things developer should be aware about, which probably to be fixed in
   a
   #=> 1  -- the whole pattern not matched, but partial match happened, a is rewritten
 
-Of the core classes, the only currently implementing +deconstruct+ and +deconstruct_keys+ is Struct.
+Currently, the only core class implementing +deconstruct+ and +deconstruct_keys+ is Struct.
 
    Point = Struct.new(:x, :y)
    Point[1, 2] in [a, b]

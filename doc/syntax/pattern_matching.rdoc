@@ -26,6 +26,8 @@ Pattern matching is _exhaustive_: if variable doesn't match pattern (in a separa
 Therefore, standalone +in+ statement is most useful when expected data structure is known beforehand, to unpack parts of it:
 
    def connect_to_db(config) # imagine config is a huge configuration hash from YAML
+     # this statement will either unpack parts of the config into local variables,
+     # or raise if config's structure is unexpected
      config in {connections: {db: {user:, password:}}, logging: {level: log_level}}
      p [user, passsword, log_level] # local variables now contain relevant parts of the config
      # ...
@@ -71,7 +73,7 @@ Any pattern can be nested inside array/hash patterns where <code><subpattern></c
 Array patterns match arrays, or objects that respond to +deconstruct+ (see below about the latter).
 Hash patterns match hashes, or objects that respond to +deconstruct_keys+ (see below about the latter). Note that only symbol keys are supported for hash patterns, at least for now.
 
-Important difference between array and hash pattern behavior is arrays match only a _whole_ array
+Important difference between array and hash patterns behavior is arrays match only a _whole_ array
 
   case [1, 2, 3]
   in [Integer, Integer]
@@ -90,6 +92,18 @@ while the hash matches even if there are other keys besides specified part:
     "not matched"
   end
   #=> "matched"
+
+There is also a way to specify there should be no other keys in the matched hash except those explicitly specified by pattern, with <code>**nil</code>:
+
+  case {a: 1, b: 2}
+  in {a: Integer, **nil} # this will not match the pattern having keys other than a:
+    "matched a part"
+  in {a: Integer, b: Integer, **nil}
+    "matched a whole"
+  else
+    "not matched"
+  end
+  #=> "matched a whole"
 
 Both array and hash patterns support "rest" specification:
 
@@ -226,7 +240,7 @@ Due to variable binding feature, existing local variable can't be straightforwar
     "not matched. expectation was: #{expectation}"
   end
   # expected: "not matched. expectation was: 18"
-  # real: "not matched. expectation was: 1" -- local variable just rewritten
+  # real: "matched. expectation was: 1" -- local variable just rewritten
 
 For this case, "variable pinning" operator <code>^</code> can be used, to tell Ruby "just use this value as a part of pattern"
 
